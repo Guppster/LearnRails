@@ -1,58 +1,44 @@
-# Commands required to setup working docker enviro, link
-# containers etc.
-$setup = <<SCRIPT
-# Stop and remove any existing containers
-docker stop $(docker ps -a -q)
-docker rm $(docker ps -a -q)
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
 
-# Build containers from Dockerfiles
-docker build -t rails /app
-docker build -t redis /app/docker/redis/
+Vagrant.configure(2) do |config|
 
-# Run and link the containers
-docker run -d --name redis redis:latest
-docker run -d -p 3000:3000 -v /app:/app --link redis:redis --name rails rails:latest
+  config.vm.box = "phusion/ubuntu-14.04-amd64"
+  config.vm.synced_folder "./", "/app", type: 'nfs'
+  config.vm.network "forwarded_port", guest: 3000, host: 1234
+  config.vm.network "private_network", ip: "192.168.33.10"
 
-SCRIPT
-
-# Commands required to ensure correct docker containers
-# are started when the vm is rebooted.
-$start = <<SCRIPT
-docker start redis
-docker start rails
-SCRIPT
-
-VAGRANTFILE_API_VERSION = "2"
-
-Vagrant.configure("2") do |config|
-
-  # Setup resource requirements
-  config.vm.provider "virtualbox" do |v|
-    v.memory = 2048
-    v.cpus = 2
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "6000"
   end
 
-  # need a private network for NFS shares to work
-  config.vm.network "private_network", ip: "192.168.50.4"
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo docker 2> /dev/null
+    if [ $? -eq 0 ]
+      then
+        echo "Docker exists, skipping..."
+        exit 0
+      else
+        sudo curl -sSL https://get.docker.com/ | sh
+        sudo curl -L https://github.com/docker/compose/releases/download/1.4.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    fi    
+  SHELL
 
-  # Rails Server Port Forwarding
-  config.vm.network "forwarded_port", guest: 3000, host: 3000
+  config.vm.provision "chef_apply" do |chef|
+    chef.recipe = <<-RECIPE
 
-  # Ubuntu
-  config.vm.box = "ubuntu/trusty64"
+      package 'awscli'
+      
+      group 'docker'
 
-  # Install latest docker
-  config.vm.provision "docker"
+      bash 'docker_sudoer' do
+        code 'sudo usermod -aG docker vagrant'
+      end
 
-  # Must use NFS for this otherwise rails
-  # performance will be awful
-  config.vm.synced_folder ".", "/app", type: "nfs"
-
-  # Setup the containers when the VM is first
-  # created
-  config.vm.provision "shell", inline: $setup
-
-  # Make sure the correct containers are running
-  # every time we start the VM.
-  config.vm.provision "shell", run: "always", inline: $start
+      service 'docker' do
+        action :start
+      end
+    RECIPE
+  end
 end

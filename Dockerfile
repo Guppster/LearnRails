@@ -1,54 +1,52 @@
-FROM ubuntu:12.04
-MAINTAINER gurpreetsingh.me <gurpreet@mailfence.com>
+FROM ubuntu:14.04
+FROM ruby:2.0.0
 
-ENV DEBIAN_FRONTEND noninteractive
-
-# REPOS
-RUN apt-get -y update
-RUN apt-get install -y -q python-software-properties
-RUN add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) universe"
-RUN add-apt-repository -y ppa:chris-lea/node.js
-RUN apt-get -y update
-
-# INSTALL
-RUN apt-get install -y -q build-essential openssl libreadline6 libreadline6-dev curl git-core zlib1g zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev automake libtool bison subversion pkg-config libmysqlclient-dev libpq-dev make wget unzip git vim nano nodejs mysql-client mysql-server gawk libgdbm-dev libffi-dev
-
-RUN git clone https://github.com/sstephenson/ruby-build.git /tmp/ruby-build && \
-    cd /tmp/ruby-build && \
-    ./install.sh && \
-    cd / && \
-    rm -rf /tmp/ruby-build
-
-# Install ruby
-RUN ruby-build -v 2.2.0 /usr/local
- 
-# Install base gems
-RUN gem install bundler rubygems-bundler --no-rdoc --no-ri
- 
-# Regenerate binstubs
-RUN gem regenerate_binstubs
-
-RUN apt-get install -y -q postgresql-client
-
-# Rails app
-ADD docker/rails/start-server.sh /start-server.sh
-RUN chmod +x /start-server.sh
-# RUN mkdir /app
-
-# Preinstall majority of gems
-WORKDIR /tmp 
-ADD ./Gemfile Gemfile
-ADD ./Gemfile.lock Gemfile.lock
-RUN bundle install 
-
-RUN mkdir /app
-# ADD . /app
-
-ENV RAILS_ENV development
-
-ADD ./docker/rails/setup_database.sh /setup_database.sh
-RUN chmod +x /setup_database.sh
+MAINTAINER James Denman <james.denman@levvel.io>
 
 EXPOSE 3000
+ENV RUBY_MAJOR 2.2
+ENV RUBY_VERSION 2.2.3
+ENV RUBY_DOWNLOAD_SHA256 df795f2f99860745a416092a4004b016ccf77e8b82dec956b120f18bdc71edce
+ENV RUBYGEMS_VERSION 2.5.0
 
-CMD ["/start-server.sh"]
+# skip installing gem documentation
+RUN echo 'install: --no-document\nupdate: --no-document' >> "$HOME/.gemrc"
+
+# some of ruby's build scripts are written in ruby
+# we purge this later to make sure our final image uses what we just built
+RUN apt-get update \
+  && apt-get install -y bison libgdbm-dev ruby \
+  && rm -rf /var/lib/apt/lists/* \
+  && mkdir -p /usr/src/ruby \
+  && curl -fSL -o ruby.tar.gz "http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz" \
+  && echo "$RUBY_DOWNLOAD_SHA256 *ruby.tar.gz" | sha256sum -c - \
+  && tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1 \
+  && rm ruby.tar.gz \
+  && cd /usr/src/ruby \
+  && autoconf \
+  && ./configure --disable-install-doc \
+  && make -j"$(nproc)" \
+  && make install \
+  && apt-get purge -y --auto-remove bison libgdbm-dev ruby \
+  && gem update --system $RUBYGEMS_VERSION \
+  && rm -r /usr/src/ruby
+
+# install things globally, for great justice
+ENV GEM_HOME /usr/local/bundle
+ENV PATH $GEM_HOME/bin:$PATH
+
+ENV BUNDLER_VERSION 1.10.6
+
+RUN gem install bundler --version "$BUNDLER_VERSION" \
+  && bundle config --global path "$GEM_HOME" \
+  && bundle config --global bin "$GEM_HOME/bin"
+
+# don't create ".bundle" in all our apps
+ENV BUNDLE_APP_CONFIG $GEM_HOME
+
+
+RUN mkdir -p /usr/src/app
+COPY . /usr/src/app
+WORKDIR /usr/src/app
+RUN gem install bundler && bundle install --jobs 20 --retry 5
+CMD bin/bundle exec rake db:create db:migrate && bin/bundle exec unicorn -p 3000
