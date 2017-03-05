@@ -1,0 +1,39 @@
+<h1>Posts</h1>
+<div class="well">
+  <%= link_to "New Post", new_micropost_path, class: "btn btn-primary" %>
+</div>
+
+<% if flash[:notice] %>
+      <div class="alert alert-success"><%= flash[:notice] %></div>
+<% end %>
+
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Content</th>
+      <th>User ID</th>
+      <th>&nbsp;</th>
+      <th>&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if @microposts.size == 0 %>
+          <tr>
+        <td colspan="6">No posts found.</td>
+      </tr>
+    <% else %>
+          <% @microposts.each do |micropost| %>
+            <tr>
+          <td><%= micropost.content %></td>
+          <td><%= micropost.user_id %></td>
+          <td>
+            <%= link_to "Edit", edit_micropost_path(micropost), class: "btn btn-default" %>
+          </td>
+          <td>
+            <%= button_to "Delete", micropost, method: :delete, data: { confirm: "Are you sure you wish to delete this post?" }, class: "btn btn-danger" %>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
+  </tbody>
+</table>
