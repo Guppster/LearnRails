@@ -1,0 +1,40 @@
+<h1>Users</h1>
+
+<div class="well">
+<%= link_to "New User", new_user_path, class: "btn btn-primary" %>
+</div>
+
+<% if flash[:notice] %>
+    <div class="alert alert-success"><%= flash[:notice] %></div>
+<% end %>
+
+<table class="table table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>&nbsp;</th>
+<th>&nbsp;</th>
+</tr>
+</thead>
+
+<tbody>
+<% if @users.size == 0 %>
+    <tr>
+<td colspan="6">No user found.</td>
+</tr>
+    <% else %>
+    <% @users.each do |user| %>
+    <tr>
+<td><%= user.name %></td>
+<td><%= user.email %></td>
+<td>
+<%= link_to "Edit", edit_user_path(User), class: "btn btn-default" %>
+<td>
+<%= button_to "Delete", user, method: :delete, data: { confirm: "Are you sure you wish to delete #{user.name}?" }, class: "btn btn-danger" %>
+</td>
+</tr>
+<% end %>
+<% end %>
+</tbody>
+</table>

@@ -1,3 +1,5 @@
 Rails.application.routes.draw do
-    root 'application#hello'
+    resources :users, except: [:show]
+
+    root to: "users#index"
 end
