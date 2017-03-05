@@ -26,8 +26,8 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "should get destory" do
-    get users_destory_url
+  test "should get destroy" do
+    get users_destroy_url
     assert_response :success
   end
 

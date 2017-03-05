@@ -24,17 +24,21 @@ class UsersController < ApplicationController
       @user = User.find(params[:id])
 
       if @user.update_attributes(user_params)
-          redirect_to users_path, notice: "#{name} has been updated!" and return
+          redirect_to users_path, notice: "#{@user.name} has been updated!" and return
       end
       
       render 'edit'
   end
 
-  def destory
+  def destroy
       @user = User.find(params[:id])
-      @user.destory
+      @user.destroy
 
-      redirect_to users_path, notice: "#{name} has been deleted!" and return
+      redirect_to users_path, notice: "#{@user.name} has been deleted!" and return
+  end
+
+  private def user_params
+      params.require(:user).permit(:name, :email)
   end
 
 end
