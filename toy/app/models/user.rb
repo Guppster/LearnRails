@@ -1,6 +1,5 @@
-class User < CouchRest::Model::Base
-    use_database 'users'
-    property :name, type: String
-    property :email, type: String
-    timestamps!
+class User
+  include Mongoid::Document
+  field :name, type: String
+  field :email, type: String
 end

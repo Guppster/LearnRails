@@ -32,6 +32,7 @@ class MicropostsController < ApplicationController
       @micropost.destroy
 
       redirect_to microposts_path, notice: "Post has been deleted!" and return
+ 
   end
 
   private def post_params
