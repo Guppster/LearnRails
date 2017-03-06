@@ -1,0 +1,8 @@
+development: 
+  protocol: 'https'
+  host: a320c208-209c-4e33-9d92-4ff91af1f3d5-bluemix.cloudant.com
+  port: 443
+  prefix: 
+  suffix: 
+  username: a320c208-209c-4e33-9d92-4ff91af1f3d5-bluemix
+  password: 60b3207e67f0d8d54ad8092e82aad1df51648bcc95506365fd5c31d56f86a3c1

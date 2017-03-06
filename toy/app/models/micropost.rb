@@ -1,5 +1,6 @@
-class Micropost
-  include Mongoid::Document
-  field :content, type: String
-  field :user_id, type: Integer
+class Micropost < CouchRest::Model::Base
+    use_database 'microposts'
+    property :content, String
+    property :user_id, Integer
+    timestamps!
 end

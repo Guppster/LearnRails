@@ -7,8 +7,11 @@ end
 
 
 gem 'rails', '~> 5.0.2'
-gem 'mongoid', git: 'https://github.com/mongodb/mongoid.git'
-gem 'bson_ext'
+
+gem 'couchrest'
+gem 'couchrest_model'
+gem 'dotenv-rails', require: 'dotenv/rails-now'
+
 gem 'puma', '~> 3.0'
 gem 'sass-rails', '~> 5.0'
 gem 'uglifier', '>= 1.3.0'
