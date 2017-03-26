@@ -2,5 +2,5 @@ Rails.application.routes.draw do
 
     resources :articles
 
-    root 'articles#new'
+    root 'articles#index'
 end
